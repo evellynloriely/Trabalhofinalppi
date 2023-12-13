@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Mensagem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <form id="meuFormulario" action="/enviar" method="post"></form>
+        <label for="pessoa">Usuário:</label>
+        <select id="pessoa" name="usuario"></select>
+
+        <label for="message">Mensagem:</label>
+        <textarea id="message" name="mensagem" rows="4"></textarea>
+
+        <button type="button" onclick="enviarMensagem()">Enviar Mensagem</button>
+
+    </form>
+    <ul id="post"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            selecionarUsuario();
+            carregarMensagens();
+        });
+
+        async function selecionarUsuario() {
+            try {
+                const usuarios = await obterUsuarios();
+                popularListaUsuarios(usuarios);
+            } catch (error) {
+                console.error('Erro ao obter usuários:', error);
+            }
+        }
+
+        async function carregarMensagens() {
+            try {
+                const mensagens = await obterMensagens();
+                exibirMensagens(mensagens);
+            } catch (error) {
+                console.error('Erro ao obter mensagens:', error);
+            }
+        }
+
+        function obterUsuarios() {
+            return fetch('/usuarios').then(response => response.json()).then(data => data.usuarios);
+        }
+
+        function popularListaUsuarios(usuarios) {
+            const selectUsuario = document.getElementById('user');
+            selectUsuario.innerHTML = '';
+
+            usuarios.forEach(usuario => {
+                const option = document.createElement('option');
+                option.value = usuario.apelido;
+                option.text = usuario.nome;
+                selectUsuario.add(option);
+            });
+        }
+
+        function obterMensagens() {
+            return fetch('/message').then(response => response.json()).then(data => data.message);
+        }
+
+        function exibirMensagens(mensagens) {
+            const smsUl = document.getElementById('post');
+            smsUl.innerHTML = '';
+
+            mensagens.forEach(message => {
+                const messageElement = document.createElement('li');
+                messageElement.innerHTML = `<strong>${message.usuario}:</strong> ${message.mensagem} - Enviada em ${message.dataH}`;
+                smsUl.appendChild(messageElement);
+            });
+        }
+
+        const form = document.getElementById('form');
+
+        function enviarMensagem() {
+        const usuarioSelecionado = document.getElementById('pessoa').value;
+        const mensagem = document.getElementById('message').value;
+
+        if (!usuarioSelecionado || !mensagem) {
+            return alert('Preencha os campos corretamente');
+        }
+
+        try {
+            postarMensagem(usuarioSelecionado, mensagem);
+            document.getElementById('message').value = '';
+            carregarMensagens();
+        } catch (error) {
+            alert('Erro ao enviar mensagem. Por favor, tente novamente.');
+        }
+    }
+
+    async function postarMensagem(usuario, mensagem) {
+        const response = await fetch('/enviar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ usuario, mensagem }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao enviar mensagem. Por favor, tente novamente.');
+        }
+    }
+    </script>
+</body>
+</html>
